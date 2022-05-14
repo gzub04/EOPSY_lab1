@@ -1,0 +1,220 @@
+r_flag=false
+u_flag=false
+l_flag=false
+prog_name=`basename $0`
+declare -a modified_files	# array for holding names of all modified files
+arr_num=0	# iterator for modified_files array
+sed_pattern=*	# def sed_pattern
+
+# function for handling errors
+function error_exit
+{
+	echo "$prog_name: ${1:-"Unknown Error."}" 1>&2
+	exit 1
+}
+# funciton for handling warnings
+function warning_msg
+{
+	echo "$prog_name: ${1:-"Unknown Warning."}" 1>&2
+}
+
+# uppercase single file name
+function uppercase
+{
+
+fullname=`basename "$1"`
+file_path=`dirname "$1"`
+if [ "$fullname" = "$prog_name" ] || [ "$fullname" = "modify_examples" ]; then
+	warning_msg "Warning: Cannot rename modify or modify_examples files"
+	return 1
+fi
+# create uppercased filename
+if ! [ -d "$1" ]; then
+	extention="${fullname##*.}"	# get extention
+	name_wo_ext="${fullname%.*}"	# get name without extention
+	uppercased=`echo $name_wo_ext | tr 'a-z' 'A-Z'`	# saves name as uppercased
+	if [ "$extention" != "$fullname" ]; then	# add extention if there is one
+		uppercased="$uppercased.$extention"
+	fi
+else
+	uppercased=`echo "$fullname" | tr 'a-z' 'A-Z'`
+fi
+# rename file
+if [ "$fullname" != "$uppercased" ]; then
+	mv "$file_path/$fullname" "$file_path/$uppercased"
+	modified_files[arr_num]="$fullname"		# add to the list of changed files
+	((arr_num+=1))
+fi
+}
+
+
+# lowercase single file name
+function lowercase
+{
+fullname=`basename "$1"`
+file_path=`dirname "$1"`
+if [ "$fullname" = "$prog_name" ] || [ "$fullname" = "modify_examples" ]; then
+	warning_msg "Warning: Cannot rename modify or modify_examples files"
+	return 1
+fi
+# create lowercased filename
+if ! [ -d "$1" ]; then
+	extention="${fullname##*.}"	# get extention
+	name_wo_ext="${fullname%.*}"	# get name without extention
+	lowercased=`echo $name_wo_ext | tr 'A-Z' 'a-z'`	# saves name as lowercased
+	if [ "$extention" != "$fullname" ]; then	# add extention if there is one
+		lowercased="$lowercased.$extention"
+	fi
+else
+	lowercased=`echo "$fullname" | tr 'A-Z' 'a-z'`
+fi
+# rename file
+if [ "$fullname" != "$lowercased" ]; then
+	mv "$file_path/$fullname" "$file_path/$lowercased"
+	modified_files[arr_num]="$fullname"		# add to the list of changed files
+	((arr_num+=1))
+fi
+}
+
+
+# recursive uppercase
+function r_uppercase
+{
+	IFS=$'\n'	# delimiter set to newline to handle spaces in names
+	for file in $(find "$1" | tac); do	# for each result of find, use uppercase, in
+		uppercase "$file"		# reversed order
+	done
+}
+
+
+# recursive lowercase
+function r_lowercase
+{
+	IFS=$'\n'	# delimiter set to newline to handle spaces in names
+	for file in $(find "$1" | tac); do	# for each result of find, use lowercase, in 
+		lowercase "$file"		# reversed order
+	done
+}
+
+
+# sed pattern on one file
+function use_sed
+{
+	filename=`basename "$1"`
+	file_path=`dirname "$1"`
+	# assigns modified name of the file to newname, if sed pattern is incorrect, newname holds error msg from sed and triggers second part of the OR with error_exit
+	newname=`echo "$filename" | sed "$sed_pattern" 2>&1` || error_exit "Wrong set pattern."$'\n'"Sed error message:"$'\n'"$newname"
+	if [ "$1" != "$file_path/$newname" ]; then
+		mv "$1" "$file_path/$newname"
+	fi
+}
+
+# recursive sed
+function r_use_sed
+{
+	IFS=$'\n'
+	for file in $(find "$1" | tac); do
+		use_sed "$file"
+	done
+}
+
+######## end of functions ########
+
+
+# check if number of arguments is correct
+if [ "$#" = 0 ]; then
+	error_exit "Not enough parameters. For help use -h"
+elif [ "$1" = -h ] || [ "$1" = --help ]; then
+cat<<EOT 1>&2
+usage: modify [OPTION] [SED PATTERN] [FILE/DIR NAMES]
+Modifies names of all files and directories given
+
+Options:
+  -r, --recursive	modifies names of all files and directories in given directory, including that directory
+  -l, --lowercase	lowercases file name(s)
+  -u, --uppercase	uppercases file name(s)
+  -h, --help		shows this messsage
+
+Sed pattern can also be given, modifying file name(s) according to that pattern. Can be used by itself or with -r option.
+
+EOT
+	exit 0
+elif [ "$#" -lt 2 ]; then	# $# - number of arguments; -lt - less than
+	error_exit "Not enough parameters. For help use -h"
+	exit 1
+fi
+
+# set flags for options
+while [ "$#" -gt 0 ]; do
+	case "$1" in
+		-r|--recursive) r_flag=true ;;
+		-u|--uppercase) u_flag=true ;;
+		-l|--lowercase) l_flag=true ;;
+		-*|--*) error_exit "Unknown argument $1." ;;
+		 *) break ;;
+	esac
+	shift
+done
+
+# check for sed pattern
+if ! [ -e "$1" ]; then
+	sed_pattern="$1"
+	shift
+	if [ "$u_flag" = true ] || [ "$l_flag" = true ]; then	# check for proper flags
+		error_exit "Cannot use -u or -l for sed pattern. If you didn't intend to use sed, check if file name is written properly."
+	fi
+	# loop through all filenames
+	while [ $# -gt 0 ]; do
+		if [ "$r_flag" = true ]; then
+			r_use_sed "$1"
+		else
+			use_sed "$1"
+		fi
+		shift
+	done
+	exit 0
+fi
+
+# if no sed pattern, check if flags are correct
+if [ $u_flag = $l_flag ]; then
+	error_exit "Incorrectly set up -u -l flags. For help use -h"
+fi
+
+
+######## main loop performing uppercasing/lowercasing of all chosen files/directories ########
+while [ $# -gt 0 ]; do
+	if ! [ -e "$1" ]; then	# check if file
+		warning_msg "Warning: $1 is not a file or directory"
+	fi
+	
+	# uppercase
+	if [ $u_flag = true ]; then
+		if [ $r_flag = true ]; then
+			if ! [ -d "$1" ]; then	# warn if -r was chosen for not a dir
+				warning_msg "Warning: $1 is not a directory"
+			fi
+			r_uppercase "$1"
+		else
+			uppercase "$1"
+		fi
+		
+	# lowercase
+	else
+		if [ $r_flag = true ]; then
+			if ! [ -d "$1" ]; then	# warn if -r was chosen for not a dir
+				warning_msg "Warning: $1 is not a directory"
+			fi
+			r_lowercase "$1"
+		else
+			lowercase "$1"
+		fi
+	fi
+	
+	shift
+done
+if [ ${#modified_files[@]} -gt 0 ]; then
+	echo "Modified files: ${modified_files[@]}"
+else
+	echo "No files were modified."
+fi
+######## end ########

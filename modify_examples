@@ -1,0 +1,82 @@
+function wait_for_input
+{
+	echo -n "Press any key to continue"
+	read -n 1 -s
+	echo $'\n'
+}
+
+
+cat<<EOT 1>&2
+Exemplary uses of "modify" script:
+To uppercase or lowercase a single file:
+-u | --uppercase,  -l | --lowercase
+
+Examples:
+  1.modify -u 'Exemplary File.txt'
+    -> EXEMPLARY FILE.txt
+  2.modify --lowercase 'Exemplary File.txt'
+    -> exemplary file.txt
+
+Alternatively, you can use full path to choose the file:
+  1.modify -u $HOME/Desktop/Exemplary_File.exe 
+    -> EXEMPLARY_FILE.exe
+EOT
+wait_for_input
+
+cat<<EOT 1>&2
+To apply modification to all files in directory and directories below, use:
+-r | --recursive
+
+Examples:
+Assume we have:
+/Folder
+/Folder/Another Folder
+/Folder/Another folder/Text File.txt
+  1.modify -r -u Folder
+    -> /FOLDER
+       /FOLDER/ANOTHER FOLDER
+       /FOLDER/ANOTHER FOLDER/TEXT FILE.txt
+  2.modify -l -r Folder
+    -> /folder
+       /folder/another folder
+       /folder/another folder/text file.txt       
+EOT
+wait_for_input
+
+cat<<EOT 1>&2
+Instead of using -u or -l, applying basic sed pattern to files is also possible:
+modify [SED PATTERN] [FILE NAMES]
+Examples:
+  1.modify s/OLDER/older/ FOLDER
+    -> Folder
+
+Assume we have:
+/Folder
+/Folder/Another Folder
+/Folder/Another folder/Text File.txt
+  1.modify -r s/o/O/ Folder
+    -> /FOlder
+       /FOlder/AnOther FOlder
+       /FOlder/AnOther FOlder/text file.txt
+EOT
+wait_for_input
+cat<<EOT 1>&2
+It is also possible to perform abovementioned operations on multiple different directories at the same time:
+Assume we have:
+/Folder
+/Some normal file.txt
+/Folder/Another Folder
+/Folder/Another folder/Text File.txt
+  1.modify -r -u Folder 'Some normal file.txt'
+    -> /FOLDER
+       /SOME NORMAL FILE.txt
+       /FOLDER/ANOTHER FOLDER
+       /FOLDER/ANOTHER FOLDER/TEXT FILE.txt
+EOT
+wait_for_input
+cat<<EOT 1>&2
+Incorrect uses of modify:
+Only basic sed patterns can be used, without any options. Using them will result in error
+It is necessary to input file names with spaces in '' to be treated as one argument, e.g. 'Folder 1'. If name contains $ sign it is also necessary.
+There has to be either -l or -u, unless using sed pattern, then there can be none.
+EOT
