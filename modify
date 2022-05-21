@@ -1,3 +1,4 @@
+#!/bin/bash
 r_flag=false
 u_flag=false
 l_flag=false
