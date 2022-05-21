@@ -1,3 +1,4 @@
+#!/bin/bash
 function wait_for_input
 {
 	echo -n "Press any key to continue"
