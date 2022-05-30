@@ -1,4 +1,4 @@
-# EOPSY_lab2
+# EOPSY lab 2
 Second laboratory of Operating Systems class.
 
 ### Short Description
