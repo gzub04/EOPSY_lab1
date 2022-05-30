@@ -3,7 +3,7 @@ First laboratory of **Operating Systems** class for Warsaw University of Technol
 
 ### Short description
 'modify' sctipt for linux allowing modifying files (upper/lowercasing, recursively or not, or modifying according to a sed pattern.
-## Task:
+## Task
 Write a script modify with the following syntax:
 
   modify [-r] [-l|-u] <dir/file names...>
