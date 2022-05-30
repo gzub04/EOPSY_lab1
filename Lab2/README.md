@@ -1,8 +1,5 @@
-# EOPSY lab 2
-Second laboratory of Operating Systems class.
-
-### Short Description
-This program showcases how you can interact with multiple children processes and how signals work in C.
+# EOPSY - lab 2
+ This program showcases how you can interact with multiple children processes and how signals work in C.
 
 ## Full Task
 ### PROCESSES AND SIGNALS
