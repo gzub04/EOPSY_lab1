@@ -5,7 +5,6 @@ l_flag=false
 prog_name=`basename $0`
 declare -a modified_files	# array for holding names of all modified files
 arr_num=0	# iterator for modified_files array
-sed_pattern=*	# def sed_pattern
 
 # function for handling errors
 function error_exit
